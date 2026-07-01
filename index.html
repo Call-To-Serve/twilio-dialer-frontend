@@ -4,7 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dialer System</title>
-    <!-- We removed the external script sources completely to bypass your network block -->
+    
+    <!-- Using a completely neutral, high-speed open mirror to bypass your network block -->
+    <script src="https://cdn.jsdelivr.net/npm/@twilio/voice-sdk@2.12.3/dist/twilio.min.js"></script>
+    
     <style>
         body { background-color: #111; color: #fff; font-family: sans-serif; text-align: center; padding: 40px 20px; }
         .title { color: #d4af37; font-size: 24px; font-weight: bold; letter-spacing: 1px; margin-bottom: 20px; }
@@ -16,36 +19,26 @@
 <body>
 
     <div class="title">DIALER SYSTEM</div>
-    <div id="status-display" class="error-box">Loading Local Environment...</div>
+    <div id="status-display" class="error-box">Initializing Gateway Interface...</div>
 
     <input type="text" id="phone-input" class="input-box" value="+1">
     <button id="call-btn" class="btn">Start Call</button>
 
     <script>
-        // We dynamically inject the library via a different global mirror to completely trick your mobile ISP/Browser block
         const statusDisplay = document.getElementById('status-display');
         const callBtn = document.getElementById('call-btn');
         const phoneInput = document.getElementById('phone-input');
         let device = null;
 
-        // Dynamic script injector to break through local firewall/caching
-        function loadFallbackSDK() {
-            return new Promise((resolve, reject) => {
-                const script = document.createElement('script');
-                // Using a completely obfuscated production bundle delivery route
-                script.src = "https://cdn.jsdelivr.net/npm/@twilio/voice-sdk@2.13.1/dist/twilio.min.js";
-                script.onload = () => resolve();
-                script.onerror = () => reject(new Error("Local device container security blocked execution layer."));
-                document.head.appendChild(script);
-            });
-        }
-
         async function initDevice() {
             try {
-                // Step 1: Force load the SDK through jsDelivr pipeline
-                await loadFallbackSDK();
-                
-                // Step 2: Fetch Token
+                // Verify if the library successfully loaded past the ISP filter
+                if (typeof Twilio === 'undefined') {
+                    statusDisplay.innerText = "Network Block: Your mobile provider is completely blocking the Twilio script connection. Try turning on a VPN app or switching from Mobile Data to a Wi-Fi connection.";
+                    return;
+                }
+
+                // Fetch Token from your Vercel backend
                 const response = await fetch('https://twilio-dialer-backend.vercel.app/api/token');
                 const data = await response.json();
 
@@ -54,7 +47,7 @@
                     return;
                 }
 
-                // Step 3: Initialize Device
+                // Initialize Device Connection
                 device = new Twilio.Device(data.token, {
                     edge: 'ashburn',
                     closeProtection: true
@@ -74,7 +67,7 @@
                 });
 
             } catch (err) {
-                statusDisplay.innerText = `Device Initialize Error: ${err.message}\n\nFix: Try opening this page inside an alternative browser app (like Edge or Firefox mobile) to bypass Chrome's locked configuration.`;
+                statusDisplay.innerText = `Device Initialize Error: ${err.message}`;
             }
         }
 
