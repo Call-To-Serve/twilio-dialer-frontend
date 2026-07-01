@@ -1,54 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Call To Serve Dialer</title>
+    <script src="https://sdk.twilio.com/js/voice/releases/2.13.0/twilio.js"></script>
+    <style>
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .dialer-container {
+            width: 90%;
+            max-width: 360px;
+            text-align: center;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 15px;
+            font-size: 24px;
+            text-align: center;
+            background: #1e1e1e;
+            border: 1px solid #333;
+            color: #fff;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-sizing: border-box;
+        }
+        .status {
+            color: #daa520;
+            margin-bottom: 20px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .btn {
+            width: 100%;
+            padding: 16px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 8px;
+            border: none;
+        }
+        .btn-call { background-color: #2ecc71; color: white; }
+        .btn-hangup { background-color: #e74c3c; color: white; display: none; }
+    </style>
+</head>
+<body>
+
+<div class="dialer-container">
+    <h2 style="color: #daa520; letter-spacing: 2px;">DIALER SYSTEM</h2>
+    <div id="status" class="status">Step 1: Contacting Backend Server...</div>
+    
+    <input type="text" id="phone-number" value="+1" placeholder="+11234567890">
+    
+    <button id="btn-call" class="btn btn-call" onclick="makeCall()">Start Call</button>
+    <button id="btn-hangup" class="btn btn-hangup" onclick="hangUp()">Hang Up</button>
+</div>
+
 <script>
     let device;
     let activeConnection = null;
     const TOKEN_URL = "https://twilio-dialer-backend.vercel.app/api/token";
 
-    function updateStatus(msg) {
-        document.getElementById('status').innerText = msg;
-    }
-
     async function initDevice() {
         try {
-            updateStatus("Step 1: Fetching token from backend...");
             const response = await fetch(TOKEN_URL);
-            
-            updateStatus("Step 2: Parsing token data...");
             const data = await response.json();
             
             if (!data.token) {
-                updateStatus("Error: Backend did not return a token string.");
+                document.getElementById('status').innerText = "Error: No token string received.";
                 return;
             }
 
-            updateStatus("Step 3: Initializing Twilio Device structure...");
+            document.getElementById('status').innerText = "Step 2: Connecting to Twilio Network...";
+            
             device = new Twilio.Device(data.token, {
                 logLevel: 1,
                 edge: 'ashburn'
             });
 
             device.on('registered', () => {
-                updateStatus("Ready to Cold Call");
+                document.getElementById('status').innerText = "Ready to Cold Call";
             });
 
             device.on('error', (error) => {
-                updateStatus("Twilio Device Error: " + error.message);
+                document.getElementById('status').innerText = "Twilio Error: " + error.message;
             });
 
-            updateStatus("Step 4: Registering with Twilio network...");
             await device.register();
 
         } catch (err) {
-            updateStatus("JavaScript Catch Error: " + err.message);
+            document.getElementById('status').innerText = "Network Catch Error: " + err.message;
         }
     }
 
     async function makeCall() {
         const toNumber = document.getElementById('phone-number').value;
-        if (!device) return alert('Dialer system not ready yet.');
-        updateStatus("Dialing " + toNumber + "...");
+        if (!device) return alert('Dialer system not ready.');
+        document.getElementById('status').innerText = "Dialing " + toNumber + "...";
         activeConnection = await device.connect({ params: { To: toNumber } });
         activeConnection.on('accept', () => {
-            updateStatus("Call Connected");
+            document.getElementById('status').innerText = "Call Connected";
             document.getElementById('btn-call').style.display = 'none';
             document.getElementById('btn-hangup').style.display = 'block';
         });
@@ -61,12 +120,13 @@
     }
 
     function resetUI() {
-        updateStatus("Call Ended / Ready");
+        document.getElementById('status').innerText = "Ready to Cold Call";
         document.getElementById('btn-call').style.display = 'block';
         document.getElementById('btn-hangup').style.display = 'none';
         activeConnection = null;
     }
 
-    // Run automatically on load
     initDevice();
 </script>
+</body>
+</html>
