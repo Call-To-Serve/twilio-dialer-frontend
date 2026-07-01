@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dialer System</title>
     
-    <!-- Official Direct Twilio Voice SDK CDN -->
-    <script src="https://sdk.twilio.com/js/voice/releases/2.12.3/twilio.min.js"></script>
+    <!-- Points to your locally hosted, unblockable file -->
+    <script src="./twilio.min.js"></script>
     
     <style>
         body { background-color: #111; color: #fff; font-family: sans-serif; text-align: center; padding: 40px 20px; }
@@ -32,15 +32,13 @@
 
         async function initDevice() {
             try {
-                // 1. Check if Twilio SDK script actually downloaded and loaded
                 if (typeof Twilio === 'undefined') {
-                    statusDisplay.innerText = "Initialization Failed.\nReason: Twilio library script failed to load from CDN.";
+                    statusDisplay.innerText = "Initialization Failed.\nReason: Local twilio.min.js failed to load. Ensure the file is in your repository root.";
                     return;
                 }
 
                 statusDisplay.innerText = "Fetching security token from backend...";
 
-                // 2. Fetch from the permanent production backend URL
                 const response = await fetch('https://twilio-dialer-backend.vercel.app/api/token', {
                     method: 'GET',
                     mode: 'cors',
@@ -55,18 +53,16 @@
                     return;
                 }
 
-                // Read as clean text first to prevent JSON parse hanging states
                 const rawData = await response.text();
                 const data = JSON.parse(rawData);
 
                 if (!data.token) {
-                    statusDisplay.innerText = "Initialization Failed.\nReason: Backend payload did not contain a valid token key.";
+                    statusDisplay.innerText = "Initialization Failed.\nReason: Backend payload did not contain a valid token.";
                     return;
                 }
 
                 statusDisplay.innerText = "Registering device with Twilio gateways...";
 
-                // 3. Initialize Device Connection
                 device = new Twilio.Device(data.token, {
                     edge: 'ashburn',
                     closeProtection: true
@@ -87,7 +83,7 @@
 
             } catch (err) {
                 console.error(err);
-                statusDisplay.innerText = `Initialization Failed.\nReason: ${err.message}\nType: ${err.name}`;
+                statusDisplay.innerText = `Initialization Failed.\nReason: ${err.message}`;
             }
         }
 
