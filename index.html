@@ -38,8 +38,9 @@
                     return;
                 }
 
-                // Replace your current fetch line with this exact URL:
-const response = await fetch('https://twilio-dialer-backend-jo98m8asv-ansaar9293525-4392s-projects.vercel.app/api/token');
+               // This uses your permanent production link so it never breaks when you deploy updates
+const response = await fetch('https://twilio-dialer-backend.vercel.app/api/token');
+
 
 
                 const data = await response.json();
