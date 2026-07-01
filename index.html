@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dialer System</title>
     
-    <!-- Alternative jsDelivr Mirror Network Route -->
-    <script src="https://cdn.jsdelivr.net/npm/twilio-client@1.14.0/dist/twilio.min.js"></script>
+    <!-- Modern Version 2 JS SDK delivered via unblocked jsDelivr Route -->
+    <script src="https://cdn.jsdelivr.net/npm/@twilio/voice-sdk@2.12.3/dist/twilio.min.js"></script>
     
     <style>
         body { background-color: #111; color: #fff; font-family: sans-serif; text-align: center; padding: 40px 20px; }
@@ -28,12 +28,12 @@
         const statusDisplay = document.getElementById('status-display');
         const callBtn = document.getElementById('call-btn');
         const phoneInput = document.getElementById('phone-input');
-        let isReady = false;
+        let device = null;
 
         async function initDevice() {
             try {
                 if (typeof Twilio === 'undefined') {
-                    statusDisplay.innerText = "Initialization Failed.\nReason: All library CDNs are blocked by your local internet provider. Please turn on a VPN connection on your mobile device and refresh.";
+                    statusDisplay.innerText = "Initialization Failed.\nReason: Twilio library script blocked. Keep VPN on and refresh.";
                     return;
                 }
 
@@ -63,21 +63,23 @@
 
                 statusDisplay.innerText = "Connecting to Twilio voice engine...";
 
-                Twilio.Device.setup(data.token, {
+                // Modern Version 2 device instantiation parameters
+                device = new Twilio.Device(data.token, {
                     edge: 'ashburn',
                     closeProtection: true
                 });
 
-                Twilio.Device.ready(() => {
-                    isReady = true;
+                await device.register();
+
+                device.on('registered', () => {
                     statusDisplay.style.borderColor = "#2ecc71";
                     statusDisplay.style.color = "#2ecc71";
                     statusDisplay.style.background = "#14251c";
                     statusDisplay.innerText = "Ready to Cold Call. System fully armed.";
                 });
 
-                Twilio.Device.error((twilioError) => {
-                    statusDisplay.innerText = `Twilio Gateway Error: ${twilioError.message}`;
+                device.on('error', (twilioError) => {
+                    statusDisplay.innerText = `Twilio Gateway Error: ${twilioError.message}\nCode: ${twilioError.code}`;
                 });
 
             } catch (err) {
@@ -86,11 +88,13 @@
             }
         }
 
-        callBtn.addEventListener('click', () => {
-            if (!isReady) return;
+        callBtn.addEventListener('click', async () => {
+            if (!device) return;
             const targetNumber = phoneInput.value.trim();
-            statusDisplay.innerText = `Dialing connection out to ${targetNumber}...`;
-            Twilio.Device.connect({ To: targetNumber });
+            if (device.state === 'registered') {
+                statusDisplay.innerText = `Dialing connection out to ${targetNumber}...`;
+                await device.connect({ params: { To: targetNumber } });
+            }
         });
 
         window.addEventListener('DOMContentLoaded', initDevice);
