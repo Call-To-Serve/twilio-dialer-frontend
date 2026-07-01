@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dialer System</title>
     
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/twilio-client/1.14.0/twilio.min.js"></script>
+    <!-- Alternative jsDelivr Mirror Network Route -->
+    <script src="https://cdn.jsdelivr.net/npm/twilio-client@1.14.0/dist/twilio.min.js"></script>
     
     <style>
         body { background-color: #111; color: #fff; font-family: sans-serif; text-align: center; padding: 40px 20px; }
@@ -32,7 +33,7 @@
         async function initDevice() {
             try {
                 if (typeof Twilio === 'undefined') {
-                    statusDisplay.innerText = "Initialization Failed.\nReason: Twilio library script blocked by network. Try switching to a VPN.";
+                    statusDisplay.innerText = "Initialization Failed.\nReason: All library CDNs are blocked by your local internet provider. Please turn on a VPN connection on your mobile device and refresh.";
                     return;
                 }
 
@@ -62,7 +63,6 @@
 
                 statusDisplay.innerText = "Connecting to Twilio voice engine...";
 
-                // Correct instantiation syntax for the Cloudflare 1.14 library version
                 Twilio.Device.setup(data.token, {
                     edge: 'ashburn',
                     closeProtection: true
@@ -90,8 +90,6 @@
             if (!isReady) return;
             const targetNumber = phoneInput.value.trim();
             statusDisplay.innerText = `Dialing connection out to ${targetNumber}...`;
-            
-            // Correct connection syntax for 1.14 library version
             Twilio.Device.connect({ To: targetNumber });
         });
 
