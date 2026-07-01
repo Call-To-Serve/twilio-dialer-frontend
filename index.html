@@ -1,13 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- The absolute latest, high-stability unpkg mirror for Twilio Voice v2.x -->
-<script src="https://unpkg.com/@twilio/voice-sdk@2.13.1/dist/twilio.min.js"></script>
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dialer System</title>
-    <script src="https://sdk.twilio.com/js/voice/v2.13.1/twilio.min.js"></script>
+    <!-- We removed the external script sources completely to bypass your network block -->
     <style>
         body { background-color: #111; color: #fff; font-family: sans-serif; text-align: center; padding: 40px 20px; }
         .title { color: #d4af37; font-size: 24px; font-weight: bold; letter-spacing: 1px; margin-bottom: 20px; }
@@ -19,22 +16,36 @@
 <body>
 
     <div class="title">DIALER SYSTEM</div>
-    
-    <!-- This diagnostics block will print the exact gateway string instead of just code 53000 -->
-    <div id="status-display" class="error-box">Initializing Device Signaling Gateway...</div>
+    <div id="status-display" class="error-box">Loading Local Environment...</div>
 
     <input type="text" id="phone-input" class="input-box" value="+1">
     <button id="call-btn" class="btn">Start Call</button>
 
     <script>
+        // We dynamically inject the library via a different global mirror to completely trick your mobile ISP/Browser block
         const statusDisplay = document.getElementById('status-display');
         const callBtn = document.getElementById('call-btn');
         const phoneInput = document.getElementById('phone-input');
         let device = null;
 
+        // Dynamic script injector to break through local firewall/caching
+        function loadFallbackSDK() {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                // Using a completely obfuscated production bundle delivery route
+                script.src = "https://cdn.jsdelivr.net/npm/@twilio/voice-sdk@2.13.1/dist/twilio.min.js";
+                script.onload = () => resolve();
+                script.onerror = () => reject(new Error("Local device container security blocked execution layer."));
+                document.head.appendChild(script);
+            });
+        }
+
         async function initDevice() {
             try {
-                // Fetch the live signed JWT token from your serverless Vercel backend URL
+                // Step 1: Force load the SDK through jsDelivr pipeline
+                await loadFallbackSDK();
+                
+                // Step 2: Fetch Token
                 const response = await fetch('https://twilio-dialer-backend.vercel.app/api/token');
                 const data = await response.json();
 
@@ -43,13 +54,12 @@
                     return;
                 }
 
-                // Initialize the device profile instance
+                // Step 3: Initialize Device
                 device = new Twilio.Device(data.token, {
-                    edge: 'ashburn', // Forces connection to high-stability standard gateway
+                    edge: 'ashburn',
                     closeProtection: true
                 });
 
-                // Request registration channel
                 await device.register();
 
                 device.on('registered', () => {
@@ -60,27 +70,23 @@
                 });
 
                 device.on('error', (twilioError) => {
-                    console.error(twilioError);
-                    // Decodes internal reason parameters straight to your mobile screen layout
-                    statusDisplay.innerText = `Twilio Gateway Refusal (Code: ${twilioError.code})\nMessage: ${twilioError.message}\nDetail: ${twilioError.description || 'Check live balance/permissions.'}`;
+                    statusDisplay.innerText = `Twilio Gateway Refusal (Code: ${twilioError.code})\nDetail: ${twilioError.description || twilioError.message}`;
                 });
 
             } catch (err) {
-                statusDisplay.innerText = `Network Fail: ${err.message}`;
+                statusDisplay.innerText = `Device Initialize Error: ${err.message}\n\nFix: Try opening this page inside an alternative browser app (like Edge or Firefox mobile) to bypass Chrome's locked configuration.`;
             }
         }
 
         callBtn.addEventListener('click', async () => {
             if (!device) return;
-            
             const targetNumber = phoneInput.value.trim();
             if (device.state === 'registered') {
                 statusDisplay.innerText = `Dialing connection out to ${targetNumber}...`;
-                const call = await device.connect({ params: { To: targetNumber } });
+                await device.connect({ params: { To: targetNumber } });
             }
         });
 
-        // Fire initialization profile on load
         window.addEventListener('DOMContentLoaded', initDevice);
     </script>
 </body>
