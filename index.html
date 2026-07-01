@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dialer System</title>
     
-    <!-- Cloudflare Mirror CDN - Bypasses Local ISP Network Blocks -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/twilio-client/1.14.0/twilio.min.js"></script>
     
     <style>
@@ -28,13 +27,12 @@
         const statusDisplay = document.getElementById('status-display');
         const callBtn = document.getElementById('call-btn');
         const phoneInput = document.getElementById('phone-input');
-        let device = null;
+        let isReady = false;
 
         async function initDevice() {
             try {
-                // Check if Cloudflare successfully unblocked the download
                 if (typeof Twilio === 'undefined') {
-                    statusDisplay.innerText = "Initialization Failed.\nReason: Twilio mirror script blocked. Please turn on a VPN and refresh.";
+                    statusDisplay.innerText = "Initialization Failed.\nReason: Twilio library script blocked by network. Try switching to a VPN.";
                     return;
                 }
 
@@ -64,23 +62,22 @@
 
                 statusDisplay.innerText = "Connecting to Twilio voice engine...";
 
-                // Initialize stable connection device
-                device = new Twilio.Device(data.token, {
+                // Correct instantiation syntax for the Cloudflare 1.14 library version
+                Twilio.Device.setup(data.token, {
                     edge: 'ashburn',
                     closeProtection: true
                 });
 
-                await device.register();
-
-                device.on('registered', () => {
+                Twilio.Device.ready(() => {
+                    isReady = true;
                     statusDisplay.style.borderColor = "#2ecc71";
                     statusDisplay.style.color = "#2ecc71";
                     statusDisplay.style.background = "#14251c";
                     statusDisplay.innerText = "Ready to Cold Call. System fully armed.";
                 });
 
-                device.on('error', (twilioError) => {
-                    statusDisplay.innerText = `Twilio Gateway Refusal (Code: ${twilioError.code})\nDetail: ${twilioError.message}`;
+                Twilio.Device.error((twilioError) => {
+                    statusDisplay.innerText = `Twilio Gateway Error: ${twilioError.message}`;
                 });
 
             } catch (err) {
@@ -89,13 +86,13 @@
             }
         }
 
-        callBtn.addEventListener('click', async () => {
-            if (!device) return;
+        callBtn.addEventListener('click', () => {
+            if (!isReady) return;
             const targetNumber = phoneInput.value.trim();
-            if (device.state === 'registered') {
-                statusDisplay.innerText = `Dialing connection out to ${targetNumber}...`;
-                await device.connect({ params: { To: targetNumber } });
-            }
+            statusDisplay.innerText = `Dialing connection out to ${targetNumber}...`;
+            
+            // Correct connection syntax for 1.14 library version
+            Twilio.Device.connect({ To: targetNumber });
         });
 
         window.addEventListener('DOMContentLoaded', initDevice);
