@@ -82,10 +82,11 @@
 
             document.getElementById('status').innerText = "Step 2: Connecting to Twilio Network...";
             
-            device = new Twilio.Device(data.token, {
+                        device = new Twilio.Device(data.token, {
                 logLevel: 1,
-                edge: 'ashburn'
+                edge: ['ashburn', 'roaming', 'singapore'] 
             });
+
 
             device.on('registered', () => {
                 document.getElementById('status').innerText = "Ready to Cold Call";
